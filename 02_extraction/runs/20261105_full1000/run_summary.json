@@ -1,0 +1,17 @@
+{
+  "started_at": "2026-11-05T22:20:35",
+  "ended_at": "2026-11-05T22:25:57",
+  "wall_sec": 322.3,
+  "total_ok": 999,
+  "total_fail": 2,
+  "total_calls": 261,
+  "fail_codes": {
+    "consistency_violation:prior_arrays_not_aligned": 2
+  },
+  "config": {
+    "bundle": 4,
+    "concurrency": 16,
+    "max_tokens": 3072,
+    "pattern": "pattern/criminal_defendant_v1.3.md"
+  }
+}

@@ -1,0 +1,46 @@
+# =============================================================
+# Runtime Profile Template — 宿主/实例相关路径（与模型、任务都正交）
+# =============================================================
+# Purpose: keep the host-specific paths and environment ("which machine this runs on")
+#       out of the model profile. Changing instance or machine means editing only this
+#       file; the model profile stays portable.
+# 字段与 scripts/launch_vllm.sh 读取的键一一对应。
+# 各脚本（doctor/launch_vllm/launch_litellm）读本文件 + model-profile。
+# =============================================================
+
+runtime:
+  name: <runtime-name>                 # 如 blackwell_2x96gb
+  platform: generic-linux                     # generic-linux
+  description: <一句话描述这台机器>
+
+# ---------- 可执行入口 ----------
+bin:
+  python: <abs-path>                   # 如 <work-base>/conda_envs/vllm/bin/python
+  vllm: <abs-path>                     # 如 <work-base>/conda_envs/vllm/bin/vllm
+  litellm: <abs-path>                  # 如 <work-base>/conda_envs/vllm/bin/litellm
+
+# ---------- 路径 ----------
+paths:
+  model_dir: <abs-path>                # vLLM --model 指向的本地权重目录（平铺，无 snapshots/<hash>/）
+  hf_home: <abs-path>                  # HF_HOME + HUGGINGFACE_HUB_CACHE
+  work_root: <abs-path>                # runner --work-root（含 results/ failures_for_*/ state/ logs/）
+  batches_root: <abs-path>             # runner --batches
+  log_dir: <abs-path>                  # 服务/runner 日志落盘
+
+# ---------- 环境变量 ----------
+env:
+  CUDA_VISIBLE_DEVICES: "0,1"          # TP=2 用双卡
+  VLLM_WORKER_MULTIPROC_METHOD: spawn
+  HF_ENDPOINT_unset: true              # launch_vllm.sh 显式 unset HF_ENDPOINT（避免 mirror 缓存路径混乱）
+  OMP_NUM_THREADS_unset: true          # launch_vllm.sh 显式 unset OMP_NUM_THREADS
+  network_turbo: false                 # 租用 GPU 平台 下载阶段可 启用平台下载加速；推理阶段不需要
+
+# ---------- 端口 ----------
+ports:
+  vllm: 8020
+  litellm: 4000
+
+# ---------- doctor 阈值（host 相关）----------
+doctor:
+  min_data_disk_avail_gb: 50           # 模型 + results + logs 留足
+  require_tmux: true                   # 长任务必须 tmux（toolkit 坑 2）

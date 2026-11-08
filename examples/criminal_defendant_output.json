@@ -1,0 +1,58 @@
+{
+  "data": [
+    {
+      "id": "(2016)示0101刑初1号",
+      "sex": "男",
+      "birth_year": 1985,
+      "ethnicity": "汉族",
+      "edu_level": "初中",
+      "prior_occupation_raw": "无业",
+      "hukou_text": null,
+      "has_prior_conviction": true,
+      "prior_conviction_desc": "2010年因犯盗窃罪被判处有期徒刑一年，2011年刑满释放",
+      "is_recidivist_legal": true,
+      "party_role": "单独犯罪",
+      "sentence_months": 10,
+      "sentence_type": "有期徒刑",
+      "probation_flag": false,
+      "fine_yuan": 2000,
+      "damage_amount_yuan": 3000,
+      "crime_location_raw": "某市某区某小区",
+      "prior_years": [
+        2010
+      ],
+      "prior_offenses": [
+        "盗窃罪"
+      ],
+      "prior_sentence_months": [
+        12
+      ],
+      "prior_released_years": [
+        2011
+      ]
+    },
+    {
+      "id": "(2019)示0202刑初2号",
+      "sex": "女",
+      "birth_year": 1990,
+      "ethnicity": null,
+      "edu_level": "大专",
+      "prior_occupation_raw": "个体户",
+      "hukou_text": null,
+      "has_prior_conviction": false,
+      "prior_conviction_desc": null,
+      "is_recidivist_legal": null,
+      "party_role": "其他",
+      "sentence_months": 12,
+      "sentence_type": "有期徒刑",
+      "probation_flag": true,
+      "fine_yuan": 20000,
+      "damage_amount_yuan": 50000,
+      "crime_location_raw": "某市某区",
+      "prior_years": [],
+      "prior_offenses": [],
+      "prior_sentence_months": [],
+      "prior_released_years": []
+    }
+  ]
+}

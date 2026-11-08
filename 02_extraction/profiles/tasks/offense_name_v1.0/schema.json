@@ -1,0 +1,14 @@
+{
+  "required": [
+    "id",
+    "offense_name",
+    "all_offense_names_raw",
+    "confidence",
+    "failure_reason"
+  ],
+  "forbidden": [],
+  "array_fields": [
+    "all_offense_names_raw"
+  ],
+  "id_field": "id"
+}

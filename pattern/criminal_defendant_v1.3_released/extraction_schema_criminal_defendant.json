@@ -1,0 +1,46 @@
+{
+ "id_key": "id",
+ "id_match_mode": "exact",
+ "exact_key_count": true,
+ "required_keys": [
+  "id",
+  "sex",
+  "birth_year",
+  "ethnicity",
+  "edu_level",
+  "prior_occupation_raw",
+  "hukou_text",
+  "has_prior_conviction",
+  "prior_conviction_desc",
+  "is_recidivist_legal",
+  "party_role",
+  "sentence_months",
+  "sentence_type",
+  "probation_flag",
+  "fine_yuan",
+  "damage_amount_yuan",
+  "crime_location_raw",
+  "prior_years",
+  "prior_offenses",
+  "prior_sentence_months",
+  "prior_released_years"
+ ],
+ "release_excluded_keys": [
+  "hukou_text",
+  "prior_conviction_desc"
+ ],
+ "forbidden_keys": [
+  "prior_records",
+  "age_at_first_crime",
+  "has_recidivism_history",
+  "has_self_surrender",
+  "has_truthful_confession",
+  "has_plea_leniency"
+ ],
+ "array_fields": [
+  "prior_years",
+  "prior_offenses",
+  "prior_sentence_months",
+  "prior_released_years"
+ ]
+}

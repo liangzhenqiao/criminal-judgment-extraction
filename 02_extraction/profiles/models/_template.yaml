@@ -1,0 +1,71 @@
+# =============================================================
+# Model Config Template
+# =============================================================
+# 用途：每个新模型上线时复制本文件 → profiles/models/<model-name>.yaml
+# 启动脚本读取本 yaml 的 vLLM/LiteLLM/runner 参数；
+# runner 核心仍通过 CLI 接收参数。
+#
+# 各字段含义见 02_extraction/README.md 的启动顺序
+# =============================================================
+
+# ---------- 模型元信息 ----------
+model:
+  name: <model-internal-name>          # 业务别名，如 qwen3-next-80b-a3b-instruct-fp8
+  provider: modelscope                  # modelscope / huggingface
+  repo: <Org>/<Repo>                    # 例如 Qwen/Qwen3-Next-80B-A3B-Instruct-FP8
+  size_gb: <approx_gb>                  # 80B FP8 ≈ 80
+  precision: fp8                        # bf16 / fp16 / fp8 / int4
+  context_max: 32768                    # 模型本身的最大上下文
+
+# ---------- vLLM 启动参数 ----------
+vllm:
+  tensor_parallel_size: 2                # 几张卡切分模型权重
+  max_model_len: 24576                   # 实际启用的最大序列长度（含输入+输出）
+  max_num_seqs: 48                       # 同时处理的请求数（硬上限）
+  gpu_memory_utilization: 0.90           # 显存占用比例（经验 0.85-0.92）
+  enable_prefix_caching: true            # 强烈推荐 true
+  trust_remote_code: true                # MoE / 自定义架构需要
+  dtype: auto                            # FP8 模型用 auto；BF16 模型用 bfloat16
+  # port 由 runtime profile 管理（host 级），不要放在 model profile。
+  served_model_name: <served-name>       # vLLM 对外暴露的模型 id（与 LiteLLM model: 字段对齐）
+  extra_args: []                         # 其他 vLLM 启动参数（如 --enforce-eager）
+
+# ---------- LiteLLM 业务别名 ----------
+litellm:
+  model_alias: <business-alias>           # runner / smoke_stage_a 调这个名字
+
+# ---------- Runner 参数（Production 配置）----------
+runner:
+  bundle: 4                              # 几个 case 拼一个 LLM 请求
+  concurrency: 48                        # runner 并发度（≤ vllm.max_num_seqs）
+  max_tokens: 3072                       # 每请求输出 token 上限
+
+# ---------- Doctor 硬门槛（可选）----------
+doctor:
+  min_gpu_mem_mib_per_card: null          # 已验证配置需要的单卡显存下限；不填则 doctor 用权重分片粗估
+
+# ---------- 性能基线（验收用，跑过压测后回填）----------
+expected_baseline:
+  throughput_it_s: 6.7                   # cases per second（cum throughput）
+  fail_rate_pct: 0.6                     # ≤ 1% 视为通过
+  context_overflow_rate_pct: 0.001       # ≤ 0.1% 视为通过
+  prior_offenses_grounding_pct: 99.0     # ≥ 95% 视为通过
+  arrays_aligned_pct: 100.0              # ≥ 99% 视为通过
+
+# ---------- 验收门槛（new model onboarding 用）----------
+acceptance:
+  throughput_min_pct_of_baseline: 90      # 新跑必须 ≥ baseline × 90%
+  fail_rate_max_pct: 1.0
+  context_overflow_max_pct: 0.1
+  hallucination_max_count: 0              # 凭空幻觉绝对零容忍
+  network_hw_failure_max_pct: 1.0
+
+# ---------- 验证记录 ----------
+validation:
+  notes: |
+    （多行说明：哪些参数怎么调出来的、踩过什么坑）
+
+# ---------- 已知坑（特定模型的特殊行为）----------
+known_issues:
+  - issue: "<例：MoE TP=2 ~98% determinism>"
+    workaround: "<例：业界普遍，接受>"

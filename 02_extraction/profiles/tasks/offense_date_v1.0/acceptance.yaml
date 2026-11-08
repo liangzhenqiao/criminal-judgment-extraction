@@ -1,0 +1,63 @@
+# Task Acceptance -- offense_date_v1.0
+#
+# Consumed by scripts/smoke_gate.py.
+# The task's grounding.py re-checks offense_date-specific metrics: id preservation,
+# verbatim grounding, precision honesty, de-duplication.
+#
+# Note: this file gates pipeline correctness. The data-quality threshold for
+# failure_reason non-null ≤5% (share of records where the model declares no offense
+# time) is checked separately by the monitoring script; a breach pauses reporting by
+# operating convention and does not enter the GREEN decision (the hard-case residual
+# set may legitimately exceed 5% with no time).
+
+task: offense_date_v1.0
+schema_key_count: 7
+
+stage_a:
+  http_status: 200
+  json_valid: true
+  key_count_eq: 7
+  id_match: true
+  all_offense_dates_raw_is_array: true
+
+stage_c:
+  expected_batches: 1          # overridden by the CLI --expected-batches (smoke=1 / full=1360)
+  throughput_it_s_min: 0.3     # non-blocking floor; the real gate is drift (this task sets no absolute throughput threshold)
+  fail_rate_max: 0.05          # contract/parse/grounding failure rate (relaxed to 5% on the hard-case set)
+  context_overflow_rate_max: 0.0
+  throughput_drift_pct_max: 25.0
+  network_hw_fail_max: 0
+
+grounding:
+  metrics:
+    - name: id_preserved_pct
+      path: id_preserved_pct
+      op: ">="
+      threshold: 100.0
+    - name: duplicate_id_results
+      path: duplicate_id_results
+      op: "<="
+      threshold: 0
+    - name: missing_input_for_result
+      path: missing_input_for_result
+      op: "<="
+      threshold: 0
+    - name: grounded_pct
+      path: grounded_pct
+      op: ">="
+      threshold: 98.0
+    - name: precision_dishonest_count
+      path: precision_dishonest_count
+      op: "<="
+      threshold: 0
+
+# For monitoring/delivery reference (not consumed by smoke_gate directly)
+monitoring:
+  failure_reason_nonnull_pct_max: 5.0   # a breach pauses reporting; the operator decides
+  grounded_pct_min: 98.0
+
+reference_counts:
+  llm_input_rows: 271906
+  full_batches: 1360
+  batch_size: 200
+  source: "offense_facts_pack_20260703 (regex residual)"

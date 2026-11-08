@@ -1,0 +1,62 @@
+# Task Acceptance -- judge_signature_v1.0
+#
+# This file is consumed by scripts/smoke_gate.py.
+# The task-level grounding.py below replaces the criminal_defendant metrics
+# with judge-signature checks: id/raw_match_id preservation, no clerk-as-judge,
+# and source-grounded evidence text.
+
+task: judge_signature_v1.0
+schema_key_count: 9
+
+stage_a:
+  http_status: 200
+  json_valid: true
+  key_count_eq: 9
+  id_match: true
+  raw_match_id_match: true
+  all_judge_candidates_is_array: true
+
+stage_c:
+  expected_batches: 50
+  throughput_it_s_min: 1.0
+  fail_rate_max: 0.02
+  context_overflow_rate_max: 0.001
+  throughput_drift_pct_max: 25.0
+  network_hw_fail_max: 0
+  clerk_as_judge_max: 0
+  id_preserved_pct_min: 100.0
+  raw_match_id_preserved_pct_min: 100.0
+  evidence_grounded_pct_min: 98.0
+  positive_shape_pct_min: 99.0
+
+grounding:
+  metrics:
+    - name: clerk_as_judge
+      path: clerk_as_judge_count
+      op: "<="
+      threshold: 0
+    - name: id_preserved_pct
+      path: id_preserved_pct
+      op: ">="
+      threshold: 100.0
+    - name: raw_match_id_preserved_pct
+      path: raw_match_id_preserved_pct
+      op: ">="
+      threshold: 100.0
+    - name: evidence_grounded_pct
+      path: evidence_grounded_pct
+      op: ">="
+      threshold: 98.0
+    - name: positive_shape_pct
+      path: positive_shape_pct
+      op: ">="
+      threshold: 99.0
+
+reference_counts:
+  frontier_total: 25344
+  raw_lookup_records: 21583
+  llm_input_rows: 21532
+  llm_unique_target_ids: 10821
+  full_batches: 4307
+  smoke_batches: 50
+  batch_size: 5

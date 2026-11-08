@@ -1,0 +1,29 @@
+# local configuration and all data products stay out of version control
+config.yaml
+work/
+*.parquet
+*.csv.gz
+*.jsonl
+*.jsonl.gz
+*.dta
+*.xlsx
+*.zip
+__pycache__/
+.pytest_cache/
+.venv/
+hf_cache/
+*.log
+.DS_Store
+
+# the sample is versioned input and reference output
+!examples/reproduction_sample/expected/*.jsonl
+
+# secrets and local keys
+.env
+.env.*
+*.secret
+secret*.txt
+*private_map*
+
+# run verdicts are versioned
+!02_extraction/runs/**/*.jsonl

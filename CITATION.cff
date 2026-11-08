@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "A dataset of itemized prior convictions and sentencing for 2.8 million criminal judgments in China, 1985–2021"
+type: software
+version: v1.0
+date-released: 2026-11-07
+license: Apache-2.0
+repository-code: "https://github.com/liangzhenqiao/criminal-judgment-extraction"
+url: "https://github.com/liangzhenqiao/criminal-judgment-extraction"
+doi: "10.6084/m9.figshare.33188721"
+authors:
+  - given-names: "Zhenqiao"
+    family-names: "Liang"
+keywords:
+  - court judgments
+  - information extraction
+  - large language models
+  - criminal justice
+  - China

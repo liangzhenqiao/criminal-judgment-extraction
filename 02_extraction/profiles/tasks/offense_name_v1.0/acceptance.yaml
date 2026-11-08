@@ -1,0 +1,16 @@
+# offense_name_v1.0 · acceptance thresholds (thresholds as code; consumed by smoke_gate/grounding)
+task: offense_name_v1.0
+thresholds:
+  throughput_it_s: ">= 0.3"
+  fail_rate: "<= 0.05"
+  context_overflow_rate: "<= 0.0"     # input <=2000 characters, overflow physically unlikely; family-wide hard-zero discipline
+  throughput_drift_pct: "<= 25.0"
+  network_hw_fail: "<= 0"
+grounding_metrics:
+  id_preserved_pct: ">= 100.0"
+  duplicate_id_results: "<= 0"
+  missing_input_for_result: "<= 0"
+  grounded_pct: ">= 98.0"             # raw element ⊆ a compact substring of (title+judgment+facts)
+  name_not_in_raw_count: "<= 0"       # offense_name must attach to some raw element (core anti-hallucination)
+monitoring_only:
+  failure_reason_nonnull_pct: "5.0"   # residual pool contains procedural documents; above this value reporting does not block

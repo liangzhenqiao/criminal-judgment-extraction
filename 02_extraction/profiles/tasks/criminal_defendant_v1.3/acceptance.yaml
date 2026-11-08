@@ -1,0 +1,61 @@
+# =============================================================
+# Task Acceptance — criminal_defendant_v1.3 (thresholds as code)
+# =============================================================
+# Purpose: smoke_gate.py reads this file and compares measured Stage A/C values against the thresholds → GREEN/ALARM.
+# =============================================================
+
+task: criminal_defendant_v1.3
+schema_key_count: 21
+
+# ---------- Stage A: 1-case sanity thresholds ----------
+stage_a:
+  http_status: 200
+  json_valid: true                     # content parses as JSON
+  key_count_eq: 21                     # exactly 21 keys (id + 16 P0 + 4 prior_*)
+  id_match: true                       # output id equals input id
+  prior_arrays_aligned: true           # the 4 prior_* arrays have equal length
+  # Reference measurement (sanity.json): steady state 1.58 s/case, prompt ~7331 tok, comp ~218 tok, finish=stop
+
+# ---------- Stage C: 50-batch stress thresholds ----------
+# fail: any miss → ALARM (no automatic Production)
+stage_c:
+  expected_batches: 50                 # smoke-subset batch count; smoke_gate requires an equal count, all status=done
+  throughput_it_s_min: 5.0             # cum throughput ≥ 5 (first smoke run 6.72; baseline 5.08)
+  fail_rate_max: 0.01                  # ≤ 1% (first smoke run 0.56%)
+  context_overflow_rate_max: 0.001     # ≤ 0.1% (first smoke run @3072: 0.019%)
+  throughput_drift_pct_max: 10.0       # first third vs last third drift ≤ 10% (first smoke run +0.78%)
+  network_hw_fail_max: 0               # timeout/request_error/http_5xx network and hardware failures = 0
+  hallucination_max: 0                 # has_prior=false + prior_* non-empty = 0 (core anti-hallucination, measured by grounding)
+  arrays_aligned_pct_min: 99.0         # ≥ 99% (first smoke run 100%)
+  prior_offenses_grounding_pct_min: 95.0  # ≥ 95% (with split; first smoke run 99.75%)
+
+# ---------- Grounding metric mapping ----------
+# smoke_gate.py has these three built in; written out here so a new task can copy the file and replace path/op/threshold.
+grounding:
+  metrics:
+    - name: hallucination
+      path: no_hpc_arr_filled_violation
+      op: "<="
+      threshold: 0
+    - name: arrays_aligned_pct
+      path: arrays_aligned_pct
+      op: ">="
+      threshold: 99.0
+    - name: prior_offenses_grounding_pct
+      path: prior_offenses.grounded_with_split_pct
+      op: ">="
+      threshold: 95.0
+
+# ---------- Reference baseline (measured, recorded only) ----------
+reference_baseline:
+  config: "bundle=4 concurrency=48 max_tokens=3072 (first smoke run)"
+  throughput_it_s: 6.72
+  fail_rate: 0.0056
+  context_overflow_rate: 0.00019
+  prior_offenses_grounding_pct: 99.75
+  prior_years_grounding_pct: 99.35
+  prior_sentence_months_grounding_pct: 86.55
+  arrays_aligned_pct: 100.0
+  hallucination_count: 0
+  prior_recall_pct: 16.0               # main CrHC proxy; 80B vs 14B (13.8%) +16 pp
+  source: quality_audit_v1_20260428

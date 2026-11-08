@@ -1,0 +1,27 @@
+model_list:
+  - model_name: legal-extractor-80b
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen3-Next-80B-A3B-Instruct-FP8
+      api_base: http://127.0.0.1:8020/v1
+      api_key: dummy
+    model_info:
+      tag: vllm_tp2_gpu01
+
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2
+  timeout: 600
+  allowed_fails: 3
+  cooldown_time: 30
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  telemetry: false
+
+# LiteLLM >= 1.108 refuses to start without a master key. The runner and the
+# smoke client already send this exact bearer token. Leave database_url out:
+# an empty string is read as a URL and rejected for its missing scheme.
+general_settings:
+  master_key: sk-dummy
+  ui: false

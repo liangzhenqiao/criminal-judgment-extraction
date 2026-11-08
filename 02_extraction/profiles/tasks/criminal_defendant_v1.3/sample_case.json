@@ -1,0 +1,22 @@
+[
+  {
+    "id": "(2016)示0101刑初1号",
+    "defendant_segment": "被告人王某某，男，汉族，1985年生，初中文化，无业。2010年因犯盗窃罪被判处有期徒刑一年，2011年刑满释放。",
+    "facts_segment": "经审理查明，2016年，被告人王某某在某市某区某小区盗窃他人电动自行车一辆，价值人民币三千元。被告人王某某系累犯，到案后如实供述自己的罪行。",
+    "judgment_segment": "判决如下：被告人王某某犯盗窃罪，判处有期徒刑十个月，并处罚金人民币二千元。",
+    "regex_extracted": {
+      "sex": "男",
+      "birth_year": 1985,
+      "edu_level": "初中",
+      "prior_occupation_raw": "无业",
+      "hukou_text": null,
+      "sentence_type": null,
+      "sentence_months": null,
+      "fine_yuan": null,
+      "has_recidivism_history": null,
+      "has_self_surrender": null,
+      "has_truthful_confession": null,
+      "has_plea_leniency": null
+    }
+  }
+]

@@ -1,0 +1,10 @@
+# GPU host only (2 x 96 GB GPUs, CUDA 12.8). Versions used in production:
+# vllm 0.19.1, torch 2.10.0+cu128 (see profiles/runtime/blackwell_2x96gb.yaml)
+# Pinned exactly. Newer vLLM builds select the DeepGEMM FP8 kernel, which
+# asserts on NVCC >= 12.9 at load time and the host has no nvcc.
+vllm==0.19.1
+torch==2.10.0
+litellm[proxy]
+requests
+PyYAML
+modelscope

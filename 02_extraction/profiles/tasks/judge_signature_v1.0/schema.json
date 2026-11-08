@@ -1,0 +1,21 @@
+{
+  "required_keys": [
+    "raw_match_id",
+    "id",
+    "has_judge_signature",
+    "judge_name",
+    "judge_role",
+    "all_judge_candidates",
+    "confidence",
+    "failure_reason",
+    "evidence_text"
+  ],
+  "forbidden_keys": [],
+  "id_key": "id",
+  "id_match_mode": "exact",
+  "raw_match_id_key": "raw_match_id",
+  "array_fields": [
+    "all_judge_candidates"
+  ],
+  "exact_key_count": true
+}

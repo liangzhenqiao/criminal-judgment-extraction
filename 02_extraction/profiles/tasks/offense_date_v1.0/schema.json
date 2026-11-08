@@ -1,0 +1,18 @@
+{
+  "required_keys": [
+    "id",
+    "offense_start_date",
+    "offense_end_date",
+    "date_precision",
+    "all_offense_dates_raw",
+    "confidence",
+    "failure_reason"
+  ],
+  "forbidden_keys": [],
+  "id_key": "id",
+  "id_match_mode": "exact",
+  "array_fields": [
+    "all_offense_dates_raw"
+  ],
+  "exact_key_count": true
+}

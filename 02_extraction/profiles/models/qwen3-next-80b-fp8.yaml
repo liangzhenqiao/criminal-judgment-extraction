@@ -1,0 +1,88 @@
+# =============================================================
+# Qwen3-Next-80B-A3B-Instruct-FP8 — 已验证配置
+# =============================================================
+# 用于刑事判决书结构化抽取任务（criminal_defendant_v1.3）
+# =============================================================
+
+model:
+  name: qwen3-next-80b-a3b-instruct-fp8
+  provider: modelscope
+  repo: Qwen/Qwen3-Next-80B-A3B-Instruct-FP8
+  size_gb: 80
+  precision: fp8
+  context_max: 32768
+
+# ---------- vLLM 启动参数（已验证）----------
+vllm:
+  tensor_parallel_size: 2
+  max_model_len: 24576
+  max_num_seqs: 48                       # 硬上限（实测 64 会 OOM 边界）
+  gpu_memory_utilization: 0.90
+  enable_prefix_caching: true            # 全量抽取实测 hit rate 61.5%
+  trust_remote_code: true
+  dtype: auto                            # 自动选 FP8
+  # port 由 runtime.ports.vllm 提供（host 级，避免同机多实例端口冲突）；
+  #       launch_vllm.sh / doctor.sh 读 runtime 不读这里。此处不再放 port，防误导。
+  # served_model_name 必须与 LiteLLM config 的 model 后缀一致：
+  #   litellm_config_v5.reference.yaml → model: hosted_vllm/Qwen/Qwen3-Next-80B-A3B-Instruct-FP8
+  # 否则 LiteLLM 会 model-not-found。
+  served_model_name: Qwen/Qwen3-Next-80B-A3B-Instruct-FP8
+  extra_args: []
+
+# ---------- LiteLLM 业务别名 ----------
+litellm:
+  model_alias: legal-extractor-80b
+
+# ---------- Runner 参数（Production 配置）----------
+runner:
+  bundle: 4                              # bundle=8 不可用（max_tokens 不够 + conc 受 25 calls/batch 限制）
+  concurrency: 48                        # 与 vllm.max_num_seqs 一致
+  max_tokens: 3072                       # 实测 comp_p99.99 ≈ 2800，3072 给足余量
+
+# ---------- Doctor 硬门槛 ----------
+doctor:
+  # 该 80B FP8 配置的 max_model_len/max_num_seqs 基于 96GB/卡实测；48GB/卡即使权重分片能装下，也不应误过 Gate0。
+  min_gpu_mem_mib_per_card: 90000
+
+# ---------- 性能基线（实测）----------
+expected_baseline:
+  throughput_it_s: 6.7                   # 全量抽取累计吞吐约 6.6
+  fail_rate_pct: 0.6                     # 全量抽取实测 0.42-0.64%
+  context_overflow_rate_pct: 0.019       # 全量抽取实测 0.019%（84K cases）
+  prior_offenses_grounding_pct: 100.0    # mid-audit 100%
+  prior_years_grounding_pct: 100.0
+  arrays_aligned_pct: 100.0              # mid-audit 100%
+  hallucination_count: 0                 # 全量抽取实测 0
+
+# ---------- 验收门槛 ----------
+acceptance:
+  throughput_min_pct_of_baseline: 90
+  fail_rate_max_pct: 1.0
+  context_overflow_max_pct: 0.1
+  hallucination_max_count: 0
+  network_hw_failure_max_pct: 1.0
+
+# ---------- 验证记录 ----------
+validation:
+  notes: |
+    - max_num_seqs=48 是 hard cap：bundle=4 + conc=48 = 192 inflight cases
+      （实际会因为 LiteLLM 限流让 inflight 接近 48，bundle=4 让单请求处理 4 case）
+    - max_tokens=2048 时 0.32% overflow，调到 3072 后降至 0.019%
+    - prefix caching 让 prefill 命中率达到 61.5%
+
+# ---------- 已知坑 ----------
+known_issues:
+  - issue: "MoE TP=2 ~98% determinism"
+    workaround: "业界普遍现象（OpenAI/Anthropic 同样），接受 ~98% reproducibility"
+
+  - issue: "80B-A3B-Instruct chat_template 不含 thinking 分支"
+    workaround: "传 LITELLM_THINKING=false，enable_thinking=True 也无效"
+
+  - issue: "HF Hub LFS 503 不可下载"
+    workaround: "切 ModelScope"
+
+  - issue: "comp_max 偶发顶到 max_tokens 上限"
+    workaround: "max_tokens=3072 给足余量；超过的 case 重跑"
+
+  - issue: "max_num_seqs=64 在 PRO 6000 96GB × 2 边界 OOM"
+    workaround: "用 max_num_seqs=48"

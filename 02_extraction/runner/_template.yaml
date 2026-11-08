@@ -1,0 +1,80 @@
+# =============================================================
+# Runner config template (reference only)
+# =============================================================
+# 主 runner 不读这个 yaml，本文件仅作参考
+# （人按 yaml 填命令行参数）
+#
+# 字段含义见 02_extraction/README.md
+# =============================================================
+
+# ---------- 任务参数（任务相关）----------
+task:
+  name: <task-name>                           # 例如 criminal_defendant_v1.3
+  pattern_path: <abs-path>                    # pattern.md 绝对路径
+  schema_version: v1.3                        # 任务 schema 版本
+
+# ---------- 输入输出 ----------
+io:
+  batches_root: <abs-path>                    # 输入 batch 目录
+  work_root: <abs-path>                       # 输出根目录（含 results/, failures_for_*/, state/, logs/）
+  pattern_glob: "**/batch_*.json"             # batch 文件 glob 模式（与 runner 内部一致）
+
+# ---------- LLM Backend ----------
+backend:
+  litellm_url: http://127.0.0.1:4000/v1
+  model_name: legal-extractor-80b             # 与 LiteLLM model_list 中 model_name 一致
+  api_key: dummy
+
+# ---------- 性能参数 ----------
+performance:
+  bundle: 4                                   # 几个 case 拼一个请求
+  concurrency: 48                             # 同时 inflight 请求数（≤ vLLM max_num_seqs）
+  max_tokens: 3072                            # 输出 token 上限
+
+# ---------- 容错 ----------
+fault_tolerance:
+  resume: true                                # 断点续传（默认 true）
+  restart: false                              # 是否清空 state 重跑（小心）
+  per_batch_retries: 0                        # batch 级 retry（runner 不做，由 LiteLLM 做）
+
+# ---------- 任务相关：Verdict ----------
+verdict:
+  # Verdict 是任务相关的代码，不能完全 yaml 化
+  # 这里只记录该任务期望的 verdict 检查项（用于审计）
+  required_checks:
+    - json_parse
+    - schema_present
+    - schema_types
+    - prior_arrays_aligned                    # 任务相关
+    - hpc_4quadrant_no_hallucination          # 任务相关
+    - id_in_arr
+    - context_overflow_check
+    - multi_defendant_match                   # 任务相关
+
+# ---------- 监控 ----------
+monitoring:
+  tick_interval_hours: 3                       # 抽样质检间隔
+  audit_milestones_pct: [10, 25, 50, 75, 90]  # 中途抽查节点
+
+# ---------- 红线（任务相关阈值，从 model.yaml acceptance 继承）----------
+red_lines:
+  fail_rate_max_pct: 5.0                       # ≥ 这个 → HALT_ALARM
+  hallucination_max_count: 0
+  cum_throughput_min: 5.0
+  network_hw_failure_max_pct: 30
+  full_5m_estimate_max_days: 12
+
+# =============================================================
+# 启动命令（按本 yaml 参数手工填进命令行）
+# =============================================================
+# LITELLM_MODEL=<backend.model_name> LITELLM_THINKING=false \
+# nohup python3 -u <runner_path> \
+#   --pattern <task.pattern_path> \
+#   --batches <io.batches_root> \
+#   --bundle <performance.bundle> \
+#   --concurrency <performance.concurrency> \
+#   --max-tokens <performance.max_tokens> \
+#   --work-root <io.work_root> \
+#   > <io.work_root>/logs/run_$(date +%Y%m%d_%H%M%S).log 2>&1 &
+# disown
+# =============================================================

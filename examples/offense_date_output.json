@@ -1,0 +1,24 @@
+{
+  "data": [
+    {
+      "id": "(2017)示0303刑初3号",
+      "offense_start_date": "2016",
+      "offense_end_date": "2016",
+      "date_precision": "Y",
+      "all_offense_dates_raw": [
+        "2016年"
+      ],
+      "confidence": "high",
+      "failure_reason": null
+    },
+    {
+      "id": "(2018)示0404刑初4号",
+      "offense_start_date": null,
+      "offense_end_date": null,
+      "date_precision": null,
+      "all_offense_dates_raw": [],
+      "confidence": "low",
+      "failure_reason": "no_offense_time_in_text"
+    }
+  ]
+}

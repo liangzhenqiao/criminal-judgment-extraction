@@ -1,0 +1,31 @@
+# Copy to config.yaml and edit. Relative paths resolve against the directory of
+# this file. No path below is distributed with the repository: the judgment
+# archive and all intermediate products must be obtained or rebuilt locally.
+
+# --- intermediates and outputs --------------------------------------------
+work_dir: ./work                      # merge/release scripts write <work_dir>/data_cleaning/{raw,master}
+validation_out_dir: ./work/validation # outputs of 04_validation
+
+# --- raw corpus (not distributed) -----------------------------------------
+corpus_zip_dir: /path/to/judgment_archive   # one "<YEAR>年裁判文书数据.zip" per judgment year
+corpus_doc_counts_csv: /path/to/corpus_doc_counts.csv  # per-year document counts of the archive
+admin_division_json: /path/to/pca-code.json  # province/city/county code dictionary
+
+# --- preprocessing outputs (01_preprocess) --------------------------------
+segmented_2014_2021: /path/to/case_events_segmented          # hive parquet, 2014-2021
+segmented_1985_2013: /path/to/supplement/case_events_segmented # hive parquet, 1985-2013
+
+# --- extraction outputs (02_extraction runs) ------------------------------
+main_extraction_2014_2021: /path/to/main_extraction_2014_2021.parquet  # accepted 21-key records, 2014-2021
+offense_date_2014_2019: /path/to/offense_date_2014_2019.parquet        # 7-key task, first pass 2014-2019
+supplement_1985_2013_results: /path/to/supplement_results  # contains task21/results, offense_pack, offense/results
+offense_backfill_2020_2021: /path/to/offense_backfill_2020_2021
+offense_backfill_2014_2019: /path/to/offense_backfill_2014_2019
+offense_backfill_final: /path/to/offense_backfill_final
+offense_name_llm_results: /path/to/offense_name_results     # contains results/ and the failure ledger
+judge_signature_csv: /path/to/judge_signature.csv          # columns id, judge, role
+
+# --- validation -------------------------------------------------------------
+release_dir: /path/to/release   # directory holding china_criminal_judgment_records_1985_2021.parquet
+audit_sample_dir: ./work/audit_sample   # output of 04_validation/annotation/01_draw_audit_sample.py
+annotation_dir: ./work/annotation       # annotation workspace (batches/, adjudication/, manifest.csv)

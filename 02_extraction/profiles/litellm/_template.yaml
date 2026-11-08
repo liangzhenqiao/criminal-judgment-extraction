@@ -1,0 +1,57 @@
+# =============================================================
+# LiteLLM Router Config Template
+# =============================================================
+# 用途：把 vLLM 的 OpenAI 兼容 API 包一层，统一管理 retry / timeout / model alias
+# 启动: litellm --config <yaml> --port 4000 --host 0.0.0.0
+# 健康检查: curl http://127.0.0.1:4000/v1/models
+#
+# 字段含义见 02_extraction/README.md
+# =============================================================
+
+model_list:
+  # -------- 主模型（业务别名 → vLLM 实际模型）--------
+  - model_name: legal-extractor-80b           # ← runner 调这个名字
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen3-Next-80B-A3B-Instruct-FP8  # ← 必须 hosted_vllm/ 前缀
+      api_base: http://127.0.0.1:8020/v1               # ← vLLM 端口
+      api_key: dummy                                    # ← vLLM 不校验
+
+  # -------- 备份模型（可选，多模型并存时启用）--------
+  # - model_name: legal-extractor-backup
+  #   litellm_params:
+  #     model: hosted_vllm/<served-model-name>
+  #     api_base: http://127.0.0.1:8021/v1
+  #     api_key: dummy
+
+# -------- Router + LiteLLM 全局设置 --------
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2                               # 网络/5xx 重试 2 次
+  timeout: 600                                 # 单请求超时 10 min
+  allowed_fails: 3
+  cooldown_time: 30
+
+litellm_settings:
+  drop_params: true                            # 丢弃 vLLM 不认识的参数
+  set_verbose: false                           # 生产环境不开 verbose log
+
+# -------- General settings --------
+general_settings:
+  master_key: sk-dummy                         # 与客户端固定 Bearer 一致，不暴露公网
+  ui: false                                    # 不开 UI
+
+# =============================================================
+# 参数详解
+# =============================================================
+# num_retries: 2
+#   1 次：偶发抖动可能漏过
+#   2 次：覆盖 99% 网络抖动                    ← 推荐
+#   3+ 次：让真故障 case 拖延太久
+#
+# request_timeout: 600 (秒)
+#   < 600s 会误杀 80B 大 batch 慢 case
+#   > 600s 会让真故障拖久                      ← 600 是甜蜜点
+#
+# drop_params: true
+#   兼容老 runner（传 chat_template_kwargs 等 vLLM 不认识的参数）
+# =============================================================

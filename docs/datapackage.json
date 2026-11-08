@@ -1,0 +1,252 @@
+{
+ "profile": "tabular-data-package",
+ "name": "china-criminal-judgment-records-1985-2021",
+ "title": "China Criminal Judgment Records 1985-2021",
+ "version": "2.14",
+ "created": "2026-11-07T14:49:15+00:00",
+ "description": "Judgment-level record set of 2,834,831 published Chinese criminal judgments (1985-2021), one row per judgment, each describing its first-listed defendant. The deposit of this version holds the CSV, field_dictionary.csv (definition, type, coverage and measured reliability of every column), the full texts as one Parquet file, and a README; the record-to-URL map and per-judgment defendant counts sit in the validation bundle at http://107.174.245.84/cjd/validation/。",
+ "licenses": [
+  {
+   "name": "CC-BY-4.0",
+   "path": "https://creativecommons.org/licenses/by/4.0/"
+  }
+ ],
+ "sources": [
+  {
+   "title": "China Judgments Online (中国裁判文书网)",
+   "path": "https://wenshu.court.gov.cn/"
+  }
+ ],
+ "resources": [
+  {
+   "name": "china-criminal-judgment-records-1985-2021-csv-plain",
+   "path": "china_criminal_judgment_records_1985_2021.csv",
+   "profile": "tabular-data-resource",
+   "format": "csv",
+   "mediatype": "text/csv",
+   "dialect": {
+    "delimiter": ","
+   },
+   "schema": {
+    "fields": [
+     {
+      "name": "id",
+      "type": "string",
+      "description": "Court case number as published (near-unique key; see case_id_collision and the \"Before you use it\" section of the README). One row has a null id, so a primary-key check reports that single row. A row is one published judgment and describes its first-listed defendant, so the rows are judgment records, not distinct persons."
+     },
+     {
+      "name": "judgment_year",
+      "type": "number",
+      "description": "Judgment year parsed from the case number (1985-2021)."
+     },
+     {
+      "name": "case_id_collision",
+      "type": "boolean",
+      "description": "TRUE if this case number is non-unique in the source corpus (maps to >1 distinct case); offense fields set null for these; see the \"Before you use it\" section of the README."
+     },
+     {
+      "name": "sex",
+      "type": "string",
+      "description": "Defendant sex (男/女). Human-coded precision 0.9739 [0.9548, 0.993], recall 0.9693 [0.9494, 0.9892], n = 277."
+     },
+     {
+      "name": "birth_year",
+      "type": "number",
+      "description": "Birth year where stated. Human-coded precision 0.9725 [0.9506, 0.9944], recall 0.9072 [0.8693, 0.9451], n = 211."
+     },
+     {
+      "name": "age_at_case",
+      "type": "number",
+      "description": "Derived: judgment_year - birth_year."
+     },
+     {
+      "name": "age_at_offense",
+      "type": "number",
+      "description": "Derived: offense_year_main - birth_year (where both present)."
+     },
+     {
+      "name": "ethnicity",
+      "type": "string",
+      "description": "Ethnicity as stated. Human-coded precision 0.9512 [0.9231, 0.9793], recall 0.9559 [0.9292, 0.9826], n = 222."
+     },
+     {
+      "name": "edu_level",
+      "type": "string",
+      "description": "Education level category. Human-coded precision 0.9246 [0.8865, 0.9627], recall 0.9361 [0.9008, 0.9713], n = 186."
+     },
+     {
+      "name": "prior_occupation_raw",
+      "type": "string",
+      "description": "Pre-case occupation, verbatim short phrase. Precision over 120 records that hold a value: 117 agree with the text; the 3 misses are a normalised two-word form, a stripped 原系 prefix and one substitution. Recall is unmeasured as a rate, but on 40 release-empty records 7 state an occupation (17.5%), so an empty cell is weak evidence. Human-coded precision 0.9750 [0.9291, 0.9915], n = 160."
+     },
+     {
+      "name": "party_role",
+      "type": "string",
+      "description": "Defendant role (sole/principal/accessory/joint/other). Human-coded precision 0.8238 [0.7857, 0.8618], recall 0.8214 [0.7832, 0.8597], n = 379."
+     },
+     {
+      "name": "offense_name",
+      "type": "string",
+      "description": "Current-case primary offense (charge), verbatim short form (drop trailing 罪). Layered derivation: official charge field / case title / judgment paragraph; LLM residual for hard cases. Prior-record offenses excluded. Human-coded precision 0.9068 [0.8779, 0.9358], recall 0.8925 [0.8621, 0.9228], n = 374."
+     },
+     {
+      "name": "offense_L1",
+      "type": "string",
+      "description": "Offense mapped to 8 macro-categories: traffic/drug/violent/theft/fraud/economic/property_other/other. Precision and recall from the completion arm (F, unweighted). Human-coded precision 0.9653 [0.9509, 0.9756], recall 0.9510 [0.9369, 0.9624], n = 864."
+     },
+     {
+      "name": "sentence_months",
+      "type": "number",
+      "description": "Custodial sentence in months, original extraction value; null for life/death-type and unstated. Human-coded precision 0.9536 [0.9314, 0.9758], recall 0.8968 [0.8652, 0.9283], n = 336."
+     },
+     {
+      "name": "sentence_type",
+      "type": "string",
+      "description": "Principal punishment type (Chinese legal term; English remnants harmonized). Human-coded precision 0.9888 [0.9779, 0.9998], recall 0.937 [0.9119, 0.9621], n = 349."
+     },
+     {
+      "name": "probation_flag",
+      "type": "boolean",
+      "description": "Suspended sentence (缓刑). Human-coded precision 0.9805 [0.9661, 0.9949], recall 0.8871 [0.8546, 0.9196], n = 333."
+     },
+     {
+      "name": "fine_yuan",
+      "type": "number",
+      "description": "Fine (CNY). Human-coded precision 0.962 [0.9388, 0.9853], recall 0.9322 [0.9016, 0.9627], n = 254."
+     },
+     {
+      "name": "damage_amount_yuan",
+      "type": "number",
+      "description": "Economic damage (CNY) where stated. Precision and recall from the completion arm (F, unweighted). Human-coded precision 0.8586 [0.8246, 0.8869], recall 0.7258 [0.6872, 0.7614], n = 481."
+     },
+     {
+      "name": "crime_location_raw",
+      "type": "string",
+      "description": "Crime location phrase, verbatim; long/digit-heavy values scrubbed for de-identification. Precision and recall from the completion arm (F, unweighted). Human-coded precision 0.8880 [0.8641, 0.9082], recall 0.8523 [0.8259, 0.8756], n = 786."
+     },
+     {
+      "name": "has_prior_conviction",
+      "type": "boolean",
+      "description": "Boolean prior-conviction indicator (anti-hallucination anchor). Human-coded precision 0.96 [0.94, 0.9799], recall 0.9456 [0.9229, 0.9683], n = 374."
+     },
+     {
+      "name": "is_recidivist_legal",
+      "type": "boolean",
+      "description": "Statutory recidivist (累犯) where determinable. Human-coded precision 0.9093 [0.8236, 0.9951], recall 0.811 [0.6988, 0.9233], n = 42."
+     },
+     {
+      "name": "prior_years",
+      "type": "string",
+      "description": "Array: judgment years of prior convictions (aligned with the other prior_* arrays). Stored as a comma-separated JSON array; the four prior_* arrays are equal length and align by position to prior_count, with documented exceptions: 55 rows have arrays of unequal length and 46 rows have a prior_count that differs from len(prior_years); 9999 in prior_sentence_months means life imprisonment or death with reprieve."
+     },
+     {
+      "name": "prior_offenses",
+      "type": "string",
+      "description": "Array: offense names of prior convictions. Stored as a comma-separated JSON array; the four prior_* arrays are equal length and align by position to prior_count, with documented exceptions: 55 rows have arrays of unequal length and 46 rows have a prior_count that differs from len(prior_years); 9999 in prior_sentence_months means life imprisonment or death with reprieve. One cell (id `（2013）庆西刑初字第343号`) is a nested array inside the JSON string."
+     },
+     {
+      "name": "prior_sentence_months",
+      "type": "string",
+      "description": "Array: sentence months of priors (9999=life/uncountable). Stored as a comma-separated JSON array; the four prior_* arrays are equal length and align by position to prior_count, with documented exceptions: 55 rows have arrays of unequal length and 46 rows have a prior_count that differs from len(prior_years); 9999 in prior_sentence_months means life imprisonment or death with reprieve."
+     },
+     {
+      "name": "prior_released_years",
+      "type": "string",
+      "description": "Array: release years of priors. Stored as a comma-separated JSON array; the four prior_* arrays are equal length and align by position to prior_count, with documented exceptions: 55 rows have arrays of unequal length and 46 rows have a prior_count that differs from len(prior_years); 9999 in prior_sentence_months means life imprisonment or death with reprieve."
+     },
+     {
+      "name": "prior_count",
+      "type": "number",
+      "description": "Derived: number of prior convictions."
+     },
+     {
+      "name": "prior_total_months",
+      "type": "number",
+      "description": "Derived: sum of prior sentence months (excluding 9999)."
+     },
+     {
+      "name": "offense_start_date",
+      "type": "string",
+      "description": "Earliest offense date (native precision; never zero-filled). Human-coded precision 0.8709 [0.836, 0.9057], recall 0.8462 [0.8091, 0.8834], n = 347."
+     },
+     {
+      "name": "offense_end_date",
+      "type": "string",
+      "description": "Latest offense date. Human-coded precision 0.8567 [0.8199, 0.8935], recall 0.8324 [0.7937, 0.8711], n = 346."
+     },
+     {
+      "name": "offense_year_main",
+      "type": "number",
+      "description": "Main offense year."
+     },
+     {
+      "name": "offense_year_alt",
+      "type": "number",
+      "description": "Alternative offense year."
+     },
+     {
+      "name": "offense_date_precision",
+      "type": "string",
+      "description": "Honest precision Y/YM/YMD."
+     },
+     {
+      "name": "offense_confidence",
+      "type": "string",
+      "description": "Extraction confidence."
+     },
+     {
+      "name": "offense_source",
+      "type": "string",
+      "description": "Offense-date derivation state: regex (rule) / llm (model) / llm_no_time (model honest-null, no offense time stated) / failed (extraction did not produce a usable value). Null where the row was not processed or where case_id_collision=TRUE nulls the offense fields."
+     },
+     {
+      "name": "no_offense_time",
+      "type": "boolean",
+      "description": "TRUE = the document states no offence time. Weak in both directions: of 99 records flagged TRUE, 41 state an offence time after all (many are short appellate rulings that carry only arrest dates); of 100 records flagged FALSE, 63 state none. Read the source judgment rather than trusting the flag as a date-availability indicator. Human-coded precision 0.4141 [0.3221, 0.5126], n = 199."
+     },
+     {
+      "name": "prosecution_date",
+      "type": "string",
+      "description": "Prosecution filing date (procedural; distinct from offense time). Precision and recall from the completion arm (F, unweighted). Human-coded precision 0.9808 [0.9667, 0.9890], recall 0.9134 [0.8899, 0.9326], n = 624."
+     },
+     {
+      "name": "case_filed_date",
+      "type": "string",
+      "description": "Court docketing date. Precision and recall from the date arm (T, unweighted). Human-coded precision 0.8866 [0.8083, 0.9355], recall 0.9348 [0.8649, 0.9698], n = 86."
+     },
+     {
+      "name": "arrest_date",
+      "type": "string",
+      "description": "Capture/surrender date. Precision and recall from the date arm (T, unweighted). Human-coded precision 0.7300 [0.6357, 0.8073], recall 0.7604 [0.6661, 0.8347], n = 73."
+     },
+     {
+      "name": "detention_date",
+      "type": "string",
+      "description": "Criminal-detention date. Precision and recall from the date arm (T, unweighted). Human-coded precision 0.8182 [0.7308, 0.8818], recall 0.8265 [0.7396, 0.8888], n = 81."
+     },
+     {
+      "name": "formal_arrest_date",
+      "type": "string",
+      "description": "Formal-arrest date. Precision and recall from the date arm (T, unweighted). Human-coded precision 0.7653 [0.6724, 0.8382], recall 0.7732 [0.6804, 0.8452], n = 75."
+     },
+     {
+      "name": "judge_id",
+      "type": "string",
+      "description": "Opaque pseudonym for the judge name printed in the public judgment (2014-2019 subset): \"J-\" plus the first 20 hex of HMAC-SHA256 over the space-normalised NFKC label. Names and the name-to-id map are not released. Null where the judgment prints no judge, an anonymous placeholder (X, 某, ×, 未知 ...) or only whitespace. Same printed label always maps to the same id; the id is a source-label pseudonym, not a verified judicial identity, and judges printed under the same name cannot be told apart. The role is in judge_role and is not always 审判长. Scored on signature-role presence, weighted main sample: precision 0.8019 (101 valued items), recall 0.2201 (379 signed items); an empty value does not mean no judge signed. Human-coded precision 0.8019 [0.7239, 0.8799], recall 0.2201 [0.1798, 0.2604], n = 101."
+     },
+     {
+      "name": "judge_role",
+      "type": "string",
+      "description": "Judge role as printed for the judge the row's judge_id encodes: 审判长 / 审判员 / 代理审判员 / 独任审判员. The encoded judge is not always the first signature line, so the value is the role on the line holding the name behind judge_id, not necessarily the leading role. A role can survive where the printed name is a placeholder or absent, so the role count slightly exceeds judge_id. Scored on whether the released role is printed in the signature block, 120 items: 0.9667 [0.9174, 0.9870]; 4 items print other roles only. Strict whole-value agreement with an independent pick is 0.8167, which measures the coding convention rather than error. Human-coded precision 0.9667 [0.9174, 0.9870], n = 120."
+     },
+     {
+      "name": "offense_name_source",
+      "type": "string",
+      "description": "Offense-name channel: charge_cause (official field) / title / segment (rule) / llm (model) / llm_no_name (model honest-null, no offense name in text). Null where no channel produced a value (41,739 rows)."
+     }
+    ],
+    "primaryKey": "id"
+   }
+  }
+ ]
+}

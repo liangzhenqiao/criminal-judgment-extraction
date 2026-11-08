@@ -1,0 +1,48 @@
+# =============================================================
+# Runtime Profile — 租用 GPU 平台 PRO 6000 Blackwell × 2（已验证）
+# =============================================================
+# 尖括号占位符是该容器实例的绝对路径；换实例时按本模板字段更新。
+# =============================================================
+
+runtime:
+  name: blackwell_2x96gb
+  platform: generic-linux
+  description: "租用 GPU 平台 RTX PRO 6000 Blackwell Server Edition × 2 (sm_120, 96GB/卡), 全量抽取验证实例"
+
+bin:
+  python: <work-base>/conda_envs/vllm/bin/python
+  vllm: <work-base>/conda_envs/vllm/bin/vllm
+  litellm: <work-base>/conda_envs/vllm/bin/litellm
+
+paths:
+  model_dir: <work-base>/modelscope_models/Qwen3-Next-80B-A3B-Instruct-FP8
+  hf_home: <work-base>/hf_cache
+  work_root: <work-base>/work
+  batches_root: <work-base>/work/batches
+  log_dir: <work-base>/work/logs
+
+env:
+  CUDA_VISIBLE_DEVICES: "0,1"
+  VLLM_WORKER_MULTIPROC_METHOD: spawn
+  HF_ENDPOINT_unset: true
+  OMP_NUM_THREADS_unset: true
+  network_turbo: false
+
+ports:
+  vllm: 8020
+  litellm: 4000
+
+doctor:
+  min_data_disk_avail_gb: 50
+  require_tmux: true
+
+# ---------- 实测环境快照（env.json，仅记录供 doctor 对比）----------
+verified_env:
+  gpu_name: "NVIDIA RTX PRO 6000 Blackwell Server Edition"
+  gpu_count: 2
+  gpu_mem_mib_per_card: 97887
+  compute_cap: sm_120
+  vllm_version: "0.19.1"
+  torch_version: "2.10.0+cu128"
+  cuda_version: "12.8"
+  verified_on: "2026-04-27"

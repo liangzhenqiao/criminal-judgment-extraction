@@ -1,0 +1,127 @@
+{
+  "all_pass": true,
+  "gates": {
+    "documents": {
+      "value": 998,
+      "threshold": 980,
+      "direction": "min",
+      "pass": true
+    },
+    "agreement": {
+      "value": 0.9722558922558923,
+      "threshold": 0.94,
+      "direction": "min",
+      "pass": true
+    },
+    "id_preserved": {
+      "value": 1.0,
+      "threshold": 1.0,
+      "direction": "min",
+      "pass": true
+    },
+    "fail_rate": {
+      "value": 0.001998001998001998,
+      "threshold": 0.02,
+      "direction": "max",
+      "pass": true
+    },
+    "throughput": {
+      "value": 3.1015212666873646,
+      "threshold": 0.8,
+      "direction": "min",
+      "pass": true
+    },
+    "deterministic_diff": {
+      "value": 0,
+      "threshold": 0,
+      "direction": "max",
+      "pass": true
+    }
+  },
+  "batches_not_done": [],
+  "accepted_records": 999,
+  "failed_records": 2,
+  "batch_wall_sec": 322.09999999999997,
+  "failure_codes": {
+    "consistency_violation:prior_arrays_not_aligned": 2
+  },
+  "fields": {
+    "sex": {
+      "match": 654,
+      "differ": 0,
+      "run_null": 30,
+      "release_null": 31,
+      "both_null": 285
+    },
+    "birth_year": {
+      "match": 497,
+      "differ": 3,
+      "run_null": 10,
+      "release_null": 23,
+      "both_null": 467
+    },
+    "ethnicity": {
+      "match": 512,
+      "differ": 2,
+      "run_null": 24,
+      "release_null": 16,
+      "both_null": 446
+    },
+    "edu_level": {
+      "match": 428,
+      "differ": 9,
+      "run_null": 14,
+      "release_null": 14,
+      "both_null": 535
+    },
+    "has_prior_conviction": {
+      "match": 948,
+      "differ": 36,
+      "run_null": 8,
+      "release_null": 8,
+      "both_null": 0
+    },
+    "is_recidivist_legal": {
+      "match": 46,
+      "differ": 0,
+      "run_null": 42,
+      "release_null": 24,
+      "both_null": 888
+    },
+    "party_role": {
+      "match": 886,
+      "differ": 89,
+      "run_null": 14,
+      "release_null": 6,
+      "both_null": 5
+    },
+    "sentence_months": {
+      "match": 842,
+      "differ": 33,
+      "run_null": 9,
+      "release_null": 10,
+      "both_null": 106
+    },
+    "sentence_type": {
+      "match": 904,
+      "differ": 11,
+      "run_null": 15,
+      "release_null": 5,
+      "both_null": 65
+    },
+    "probation_flag": {
+      "match": 865,
+      "differ": 12,
+      "run_null": 14,
+      "release_null": 17,
+      "both_null": 92
+    },
+    "fine_yuan": {
+      "match": 637,
+      "differ": 11,
+      "run_null": 12,
+      "release_null": 14,
+      "both_null": 326
+    }
+  }
+}
