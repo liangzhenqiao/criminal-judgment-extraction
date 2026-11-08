@@ -16,11 +16,12 @@ step and report it; do not continue past it. End with the report in step 8.
 
 After step 0a, all commands run from the repository root, held in `$REPO`. Every
 block starts with `cd "$REPO"`. If the shell was reset and `$REPO` is empty or
-`python` is not the venv one, run `source ~/.repro_env` (written in step 1).
+`python` is not the venv one, run `source ~/.repro_env` (written in step 0a).
 
-From an empty host the whole run took 2 h 12 min on 8 November 2026 (2 × RTX
-PRO 6000, mainland China), most of it the model download. Some steps run long:
-step 1 20 to 55 minutes with an empty package cache, step 3 one to two hours,
+From an empty host the whole run took 2 h 07 min to 2 h 12 min on 8 and 9
+November 2026 (2 × RTX PRO 6000, mainland China), most of it the model
+download. Some steps run long: step 1 7 to 55 minutes with an empty package
+cache, step 3 one to two hours,
 step 6 several minutes. Many agent shells stop a command after a few minutes.
 Step 3 therefore runs in `tmux` and you poll its log. If your shell has such a
 limit, run the long command of step 1 or step 6 the same way:
@@ -41,7 +42,7 @@ report only when every row of a table has failed.
 | repository | step 0a | direct HTTPS (or the proxy already set in `HTTPS_PROXY`) → AutoDL's academic route, only on AutoDL → ask for a tarball |
 | `uv` | step 0b | already installed → `pip install uv` from the image's index, `pypi.org`, Tsinghua, USTC → the `astral.sh` installer |
 | package index | step 0c | the image's preset index → cloud-internal mirrors → `pypi.org` → Tsinghua, USTC, BFSU, SJTU, NJU, Tencent, Huawei, Aliyun |
-| Python 3.11 | step 0c | uv's default source (GitHub) → USTC and NJU mirrors → AutoDL's academic route, only on AutoDL |
+| Python 3.11 | step 0c | uv's default source (GitHub) → NJU and USTC mirrors → AutoDL's academic route, only on AutoDL |
 | model weights | step 0c | ModelScope, Hugging Face, hf-mirror.com, ranked by speed; an existing copy in `MODEL_DIR` comes first |
 
 The one provider-specific line is AutoDL's academic route,
@@ -178,8 +179,8 @@ On `NET_PROBE_FAILED` no index served the `vllm` wheel: report
 ```bash
 cd "$REPO" && . work/repro/net.env
 uv venv .venv --python 3.11 \
-  || { rm -rf .venv; UV_PYTHON_INSTALL_MIRROR=https://mirrors.ustc.edu.cn/github-release/astral-sh/python-build-standalone uv venv .venv --python 3.11; } \
   || { rm -rf .venv; UV_PYTHON_INSTALL_MIRROR=https://mirror.nju.edu.cn/github-release/astral-sh/python-build-standalone uv venv .venv --python 3.11; } \
+  || { rm -rf .venv; UV_PYTHON_INSTALL_MIRROR=https://mirrors.ustc.edu.cn/github-release/astral-sh/python-build-standalone uv venv .venv --python 3.11; } \
   || { rm -rf .venv; [ -f /etc/network_turbo ] && ( source /etc/network_turbo && unset UV_PYTHON_INSTALL_MIRROR && uv venv .venv --python 3.11 ); }
 source .venv/bin/activate
 ok=0
@@ -193,15 +194,19 @@ test "$ok" = 1
 ```
 
 `uv venv` fetches Python 3.11 from the source step 0c chose; the next three
-lines are the other sources, the last of them only on AutoDL. The loop installs
-from the fastest index and moves to the next one when an index fails; on 8
-November 2026 the Aliyun mirror refused an AutoDL host with HTTP 403 and the
-Tsinghua mirror worked. The index that worked is appended to
-`work/repro/net.env`, so the later `uv` calls use it too.
+lines are the other sources, the last of them only on AutoDL. The NJU mirror
+comes before USTC because USTC answered HTTP 403 for the build `uv` 0.13 asks
+for on 8 November 2026. The loop installs from the fastest index and moves to
+the next one when an index fails; on 8 November 2026 the Aliyun mirror refused
+one AutoDL host with HTTP 403 and the Tsinghua mirror worked, while on another
+AutoDL host the same evening Aliyun served everything. The index that worked is
+appended to `work/repro/net.env`, so the later `uv` calls use it too.
 
 The `uv pip install` line downloads about 10 GB of packages (`torch`, `vllm`,
-CUDA libraries). With an empty `uv` cache it took 23 to 53 minutes on mainland
-China hosts in November 2026; with a warm cache it takes a few minutes. Long
+CUDA libraries). With an empty `uv` cache it took 7 minutes from the index
+step 0c ranked first (16.9 MB/s on its probe) and 23 to 53 minutes from
+mirrors picked by hand, on mainland China hosts in November 2026; with a warm
+cache it takes a few minutes. Long
 silences between `Downloaded` lines are normal. If no new `Downloaded` line
 appears for 20 minutes, stop the command and rerun the loop without the index
 it was using: `PYPI_INDEXES="<the rest of the list>"`.
@@ -250,8 +255,8 @@ matches the list. It works down this chain until all 15 files pass:
 | 3 | plain `curl` with resume from each source in the same order, four files at a time | under 1 MB/s for five minutes, or three failed retries |
 | 4 | rows 2 and 3 once more, for files still missing or failing their hash | — |
 
-Measured from mainland China hosts: ModelScope took 77 minutes at about 18 MB/s
-on 8 November 2026 and 94 minutes at about 15 MB/s on 5 November; the Hugging
+Measured from mainland China hosts: ModelScope took 77 to 96 minutes at 14 to
+18 MB/s on 5, 8 and 9 November 2026; the Hugging
 Face mirror stalled at 630 MB, then ran at about 1 MB/s. On a direct link
 outside China, Hugging Face usually takes 10–40 minutes.
 
