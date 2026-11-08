@@ -102,7 +102,7 @@ contract is fixed, the record is extracted, one value fails the verbatim
 evidence check, the record goes back through the failure ledger, passes on the
 rerun and is scored.
 
-https://github.com/user-attachments/assets/b4b9bfe5-840b-484f-96b0-75a397bccf87
+https://github.com/user-attachments/assets/27939fbc-f60f-40cd-aeda-2eee182954ed
 
 ## Pattern as contract
 

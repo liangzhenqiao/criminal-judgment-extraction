@@ -83,7 +83,7 @@ flowchart LR
 
 下面的动画带一篇判决书走完上面的流程图：先定契约，再抽取；有一个值没通过逐字证据检查，记录进失败台账，回去重跑，通过后打分。
 
-https://github.com/user-attachments/assets/b4b9bfe5-840b-484f-96b0-75a397bccf87
+https://github.com/user-attachments/assets/27939fbc-f60f-40cd-aeda-2eee182954ed
 
 ## Pattern 即契约
 
