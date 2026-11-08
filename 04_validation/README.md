@@ -43,13 +43,12 @@ internal files. Its regular expressions are assembled from fragments, so the
 script's own text does not match them; running it is the only way to see what
 it catches.
 
-The 10 findings on this snapshot are the standing baseline:
+The 9 findings on this snapshot are the standing baseline:
 
 - `02_extraction/runs/20261105_full1000/failure_y2014.jsonl`: data_file
 - `02_extraction/runs/20261105_full1000/failure_y2017.jsonl`: data_file
 - `02_extraction/runs/20261105_full1000/failure_y2017.jsonl:1`: birth_date
 - `02_extraction/runs/20261105_full1000/failure_y2017.jsonl:1`: defendant_name
-- `02_extraction/scripts/download_model.sh:14`: gpu_host
 - `README.md:59`: birth_date
 - `README.md:129`: tool_name
 - `README.md:130`: tool_name

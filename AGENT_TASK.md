@@ -14,76 +14,51 @@ sample documents and score them. Every step names a command and a one-line pass
 check. A pass check exits 0 when the step passed. If a check fails, stop at that
 step and report it; do not continue past it. End with the report in step 8.
 
-After step 1, all commands run from the repository root, held in `$REPO`. Every
+After step 0a, all commands run from the repository root, held in `$REPO`. Every
 block starts with `cd "$REPO"`. If the shell was reset and `$REPO` is empty or
 `python` is not the venv one, run `source ~/.repro_env` (written in step 1).
 
-Some steps run long: step 1 up to an hour with an empty package cache, step 3
-one to two hours, step 6 several minutes. Many agent shells stop a command
-after a few minutes. Step 3 therefore runs in `tmux` and you poll its log. If
-your shell has such a limit, run the long command of step 1 or step 6 the same
-way: `tmux new -d -s <name> 'bash -lc "<command> > <log> 2>&1"'`, then read the
-log until it finishes. Do not start a second copy while one is running.
+From an empty host the whole run took 2 h 12 min on 8 November 2026 (2 × RTX
+PRO 6000, mainland China), most of it the model download. Some steps run long:
+step 1 20 to 55 minutes with an empty package cache, step 3 one to two hours,
+step 6 several minutes. Many agent shells stop a command after a few minutes.
+Step 3 therefore runs in `tmux` and you poll its log. If your shell has such a
+limit, run the long command of step 1 or step 6 the same way:
+`tmux new -d -s <name> 'bash -lc "<command> > <log> 2>&1"'`, then read the log
+until it finishes. Do not start a second copy while one is running.
+
+### Network: how sources are chosen
+
+Nothing in this file depends on which provider rents the host. Every download
+has an ordered list of sources. Step 0c measures them on this host with a short
+real download and ranks them by speed; the scripts then go down the list on
+their own when a source fails or stalls. Each step below also prints that list
+as a table: if a script itself breaks, take the next row by hand. Stop and
+report only when every row of a table has failed.
+
+| What | Chosen by | Sources, in the order tried when the probe cannot rank them |
+|---|---|---|
+| repository | step 0a | direct HTTPS (or the proxy already set in `HTTPS_PROXY`) → AutoDL's academic route, only on AutoDL → ask for a tarball |
+| `uv` | step 0b | already installed → `pip install uv` from the image's index, `pypi.org`, Tsinghua, USTC → the `astral.sh` installer |
+| package index | step 0c | the image's preset index → cloud-internal mirrors → `pypi.org` → Tsinghua, USTC, BFSU, SJTU, NJU, Tencent, Huawei, Aliyun |
+| Python 3.11 | step 0c | uv's default source (GitHub) → USTC and NJU mirrors → AutoDL's academic route, only on AutoDL |
+| model weights | step 0c | ModelScope, Hugging Face, hf-mirror.com, ranked by speed; an existing copy in `MODEL_DIR` comes first |
+
+The one provider-specific line is AutoDL's academic route,
+`source /etc/network_turbo`. That file exists only on AutoDL hosts. The route
+reaches GitHub, but it slows package mirrors and model downloads, so this file
+turns it on only for a GitHub fetch that failed without it and turns it off
+straight after. On any other provider, skip those lines; the probe finds the
+sources that work there.
 
 ## 0. Preconditions
-
-On a host in mainland China, turn on the provider's academic route first (AutoDL
-provides one). Without it, port 443 to GitHub and to `astral.sh` times out on
-these hosts. Elsewhere the line is a no-op.
-
-```bash
-source /etc/network_turbo 2>/dev/null || true
-```
-
-Install `uv` first if it is missing, then put its directory on `PATH`. The
-installer script fetches a second file with no time limit of its own, and that
-fetch has hung for minutes on a mainland China host, so `timeout` bounds the
-whole installer and `pip` takes over when it fails. The last form is for images
-whose system Python refuses `pip install --user`.
-
-```bash
-command -v uv || timeout -k 10 300 sh -c 'curl -m 60 -LsSf https://astral.sh/uv/install.sh | sh' \
-  || python3 -m pip install --user uv || python3 -m pip install --user --break-system-packages uv
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Some images ship no `tmux`, which steps 4 and 6 need. Install it
-if the check below reports it missing:
-
-```bash
-command -v tmux || { apt-get update -qq && apt-get install -y -qq tmux; }
-```
-
-A public repository clones over plain HTTPS with no credentials. A private one
-needs a read-only token in `$GITHUB_TOKEN`; the token also raises the rate
-limits. `$GH` holds the host name. `GIT_TERMINAL_PROMPT=0` makes `git` fail at
-once instead of waiting for a password nobody will type. The route from above
-stays on through the access check below, through the clone and through the
-Python download in step 1, which fetches an interpreter from GitHub. Step 1
-then turns it off, because it slows PyPI mirrors and model downloads.
-
-```bash
-export GIT_TERMINAL_PROMPT=0
-GH=github.com
-if [ -n "${GITHUB_TOKEN:-}" ]; then
-  REPO_URL="https://x-access-token:$GITHUB_TOKEN@$GH/liangzhenqiao/criminal-judgment-extraction.git"
-else
-  REPO_URL="https://$GH/liangzhenqiao/criminal-judgment-extraction.git"
-fi
-```
-
-If neither URL works, stop and ask for a readable tarball or a read-only link.
-Unpack it into an empty directory and start step 1 at the `cd` line. If a
-local copy is handed over instead, `rsync` it into an empty directory and do
-the same.
 
 Pass checks. Run each line. Each must exit 0.
 
 ```bash
 test "$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | awk '$1>=90000' | wc -l)" -ge 2   # GPUs: 2 cards, each >= 90000 MiB
 test "$(df -BG --output=avail . | tail -1 | tr -dc 0-9)" -ge 165   # disk: weights 82 GB, environment ~15 GB, the doctor keeps 50 GiB (54 GB) free, plus 11 GB for the rewrite of one shard. AutoDL: pass expand_system_disk_by_gb 150 at creation, the default 80 G system disk is too small
-test "$(command -v git curl tmux uv nvidia-smi | wc -l)" -eq 5   # tools: all 5 present
-git ls-remote "$REPO_URL" HEAD   # repository access
+test "$(command -v git curl nvidia-smi | wc -l)" -eq 3   # tools: all 3 present
 ```
 
 On a reused host, an old `.venv` shares its files with the `uv` cache
@@ -97,29 +72,139 @@ With a different card layout (one larger card, or more cards), set
 changes with the layout. The GPU check then reads: total memory across cards
 ≥ 180000 MiB.
 
+### 0a. Clone the repository
+
+A public repository clones over plain HTTPS with no credentials. A private one
+needs a read-only token in `$GITHUB_TOKEN`; the token also raises the rate
+limits. `GIT_TERMINAL_PROMPT=0` makes `git` fail at once instead of waiting for
+a password nobody will type. When the direct clone fails and the host is an
+AutoDL host, the clone is retried once through AutoDL's academic route, inside
+`( … )` so the route ends with that line.
+
+```bash
+export GIT_TERMINAL_PROMPT=0
+GH=github.com
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  REPO_URL="https://x-access-token:$GITHUB_TOKEN@$GH/liangzhenqiao/criminal-judgment-extraction.git"
+else
+  REPO_URL="https://$GH/liangzhenqiao/criminal-judgment-extraction.git"
+fi
+timeout 900 git clone "$REPO_URL" criminal-judgment-extraction \
+  || { [ -f /etc/network_turbo ] && rm -rf criminal-judgment-extraction \
+       && ( source /etc/network_turbo && timeout 900 git clone "$REPO_URL" criminal-judgment-extraction ); }
+cd criminal-judgment-extraction && REPO=$PWD
+mkdir -p work/repro work/models
+cat > ~/.repro_env <<EOF
+export PATH="\$HOME/.local/bin:\$PATH"
+export REPO=$REPO
+cd "\$REPO"
+[ -f work/repro/net.env ] && . work/repro/net.env
+[ -f .venv/bin/activate ] && source .venv/bin/activate
+EOF
+```
+
+`~/.repro_env` restores `$REPO`, the sources chosen in step 0c and the venv
+after a shell reset.
+
+If both clones fail, stop and ask for a readable tarball or a read-only link.
+Unpack it into an empty directory, `cd` into it and continue from the
+`REPO=$PWD` line. If a local copy is handed over instead, `rsync` it into an
+empty directory and do the same.
+
+Pass check: `cd "$REPO" && test -f AGENT_TASK.md && test -f ~/.repro_env`
+
+### 0b. Install `uv` and `tmux`
+
+`uv` comes from the Python package index, with the image's own `pip` settings
+first, then `pypi.org`, Tsinghua and USTC. Some images have no `python3` on the
+`PATH` of a non-interactive shell; the loop also tries the usual conda paths.
+The `astral.sh` installer is the last resort, because its second download comes
+from GitHub, and that fetch has hung for minutes on a mainland China host.
+`timeout` bounds every attempt.
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v uv >/dev/null; then
+  for py in python3 python "$HOME/miniconda3/bin/python" /opt/conda/bin/python /usr/bin/python3; do
+    command -v "$py" >/dev/null || continue
+    for idx in "" https://pypi.org/simple https://pypi.tuna.tsinghua.edu.cn/simple https://mirrors.ustc.edu.cn/pypi/simple; do
+      { timeout 300 "$py" -m pip install -q --user ${idx:+-i "$idx"} uv \
+        || timeout 300 "$py" -m pip install -q --user --break-system-packages ${idx:+-i "$idx"} uv; } \
+        && command -v uv >/dev/null && break 2
+    done
+  done
+fi
+command -v uv >/dev/null || timeout -k 10 300 sh -c 'curl -m 60 -LsSf https://astral.sh/uv/install.sh | sh' \
+  || { [ -f /etc/network_turbo ] && ( source /etc/network_turbo && timeout -k 10 300 sh -c 'curl -m 60 -LsSf https://astral.sh/uv/install.sh | sh' ); }
+```
+
+Some images ship no `tmux`, which steps 3, 4 and 6 need. If the default
+package mirror of the image fails, the second line points the Ubuntu sources at
+the Tsinghua mirror (a `.bak` copy of each file is kept) and tries again.
+
+```bash
+command -v tmux || { timeout 600 apt-get update -qq && timeout 600 apt-get install -y -qq tmux; } \
+  || { sed -i.bak -E 's#https?://([a-z]{2}\.)?(archive|security)\.ubuntu\.com#https://mirrors.tuna.tsinghua.edu.cn#' \
+         /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null
+       timeout 600 apt-get update -qq && timeout 600 apt-get install -y -qq tmux; }
+```
+
+Pass check: `test "$(command -v git curl tmux uv nvidia-smi | wc -l)" -eq 5`
+
+### 0c. Measure the download sources
+
+```bash
+cd "$REPO"
+bash 02_extraction/scripts/net_probe.sh
+```
+
+The script downloads a short piece of the real files from every candidate in
+the table above: the `vllm` wheel from each package index, the Python archive
+this `uv` would fetch, and the first model shard. It ranks them by speed and
+writes `work/repro/net.env`, which steps 1 and 3 read; the candidates and
+their speeds are in `work/repro/net_probe.log`. It takes one to five minutes.
+It uses whatever proxy is set in the environment; unset any proxy you do not
+want before running it. To force a choice, set `UV_DEFAULT_INDEX`,
+`UV_PYTHON_INSTALL_MIRROR` or `MODEL_SOURCE` (`modelscope`, `hf` or `hfmirror`)
+before the command; the script puts that candidate first.
+
+Pass check: `cd "$REPO" && tail -1 work/repro/net_probe.log | grep -q 'NET_PROBE_DONE$' && . work/repro/net.env && test -n "$PYPI_INDEXES"`
+
+On `NET_PROBE_FAILED` no index served the `vllm` wheel: report
+`work/repro/net_probe.log`.
+
 ## 1. Install
 
 ```bash
-git clone "$REPO_URL" criminal-judgment-extraction
-cd criminal-judgment-extraction && REPO=$PWD
-uv venv .venv --python 3.11 && source .venv/bin/activate   # may fetch Python from GitHub, so before the unset
-unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY        # turbo route off from here on
-if [ -f /etc/network_turbo ]; then export UV_DEFAULT_INDEX=https://mirrors.aliyun.com/pypi/simple; fi   # direct PyPI is too slow on mainland China hosts
-uv pip install -r requirements.txt -r 02_extraction/requirements-serving.txt
-mkdir -p work/repro work/models
-printf 'export PATH="$HOME/.local/bin:$PATH"\nexport REPO=%s\ncd "$REPO" && source "$REPO/.venv/bin/activate"\n' "$REPO" > ~/.repro_env
-if [ -f /etc/network_turbo ]; then echo 'export UV_DEFAULT_INDEX=https://mirrors.aliyun.com/pypi/simple' >> ~/.repro_env; fi   # keep the mirror after a shell reset
+cd "$REPO" && . work/repro/net.env
+uv venv .venv --python 3.11 \
+  || { rm -rf .venv; UV_PYTHON_INSTALL_MIRROR=https://mirrors.ustc.edu.cn/github-release/astral-sh/python-build-standalone uv venv .venv --python 3.11; } \
+  || { rm -rf .venv; UV_PYTHON_INSTALL_MIRROR=https://mirror.nju.edu.cn/github-release/astral-sh/python-build-standalone uv venv .venv --python 3.11; } \
+  || { rm -rf .venv; [ -f /etc/network_turbo ] && ( source /etc/network_turbo && unset UV_PYTHON_INSTALL_MIRROR && uv venv .venv --python 3.11 ); }
+source .venv/bin/activate
+ok=0
+for idx in $PYPI_INDEXES; do
+  echo "== package index: $idx"
+  if UV_DEFAULT_INDEX=$idx uv pip install -r requirements.txt -r 02_extraction/requirements-serving.txt; then
+    echo "export UV_DEFAULT_INDEX=$idx" >> work/repro/net.env; ok=1; break
+  fi
+done
+test "$ok" = 1
 ```
 
-The `uv pip install` line downloads about 10 GB of packages (`torch`, `vllm`,
-CUDA libraries). With an empty `uv` cache it took 53 minutes from the Aliyun
-mirror on 5 November 2026; with a warm cache it takes a few minutes. Long
-silences between `Downloaded` lines are normal.
+`uv venv` fetches Python 3.11 from the source step 0c chose; the next three
+lines are the other sources, the last of them only on AutoDL. The loop installs
+from the fastest index and moves to the next one when an index fails; on 8
+November 2026 the Aliyun mirror refused an AutoDL host with HTTP 403 and the
+Tsinghua mirror worked. The index that worked is appended to
+`work/repro/net.env`, so the later `uv` calls use it too.
 
-Other mainland China hosts have no `/etc/network_turbo`: run
-`export UV_DEFAULT_INDEX=https://mirrors.aliyun.com/pypi/simple` yourself before
-this block, and add it to `~/.repro_env` the same way. If the Aliyun mirror
-fails, use `https://pypi.tuna.tsinghua.edu.cn/simple`.
+The `uv pip install` line downloads about 10 GB of packages (`torch`, `vllm`,
+CUDA libraries). With an empty `uv` cache it took 23 to 53 minutes on mainland
+China hosts in November 2026; with a warm cache it takes a few minutes. Long
+silences between `Downloaded` lines are normal. If no new `Downloaded` line
+appears for 20 minutes, stop the command and rerun the loop without the index
+it was using: `PYPI_INDEXES="<the rest of the list>"`.
 
 Pass check: `cd "$REPO" && python -c "import vllm, litellm, pandas"`
 
@@ -151,26 +236,24 @@ cp 02_extraction/profiles/models/qwen3-next-80b-fp8.yaml work/repro/model.yaml
 Pass check: `cd "$REPO" && test "$(grep -c '<work-base>' work/repro/runtime.yaml)" = 0`
 
 Download the model. The weights are 82 GB in 8 shards, and step 0 checked the
-disk for them. `02_extraction/scripts/download_model.sh` picks one source and
-downloads from it:
+disk for them. ModelScope, Hugging Face and hf-mirror.com serve the same bytes:
+every file has the same SHA-256 on all three, and
+`02_extraction/profiles/models/qwen3-next-80b-fp8.sha256` lists them.
+`02_extraction/scripts/download_model.sh` therefore keeps every file already
+downloaded when it changes source, and accepts a file only when its hash
+matches the list. It works down this chain until all 15 files pass:
 
-- ModelScope on a mainland China host (one with `/etc/network_turbo`, or where
-  `huggingface.co` does not answer within 10 seconds);
-- Hugging Face elsewhere.
+| Order | Source | When it moves on |
+|---|---|---|
+| 1 | an existing copy named by `MODEL_DIR=<path>` (a provider's shared model disk, a mounted volume, an earlier run); linked in, nothing downloaded | any file fails its hash |
+| 2 | each source in the order of `MODEL_SOURCES` in `work/repro/net.env`, with its own client (`modelscope download`, `hf download`), two attempts each | the client exits with files missing, or adds under 300 MB in five minutes |
+| 3 | plain `curl` with resume from each source in the same order, four files at a time | under 1 MB/s for five minutes, or three failed retries |
+| 4 | rows 2 and 3 once more, for files still missing or failing their hash | — |
 
-`MODEL_SOURCE=hf` or `MODEL_SOURCE=modelscope` in front of the command
-overrides the choice. On a mainland host forced to Hugging Face, also set
-`HF_ENDPOINT=https://hf-mirror.com`. The script uses one source per run
-because the two hosts publish different hashes under the same file names. A
-Hugging Face attempt that adds less than 300 MB in any five minutes counts as
-failed; after two such attempts the script clears the directory and switches to
-ModelScope, which resumes from the last byte. It ends by running the checks
-below and prints `DOWNLOAD_DONE` or `DOWNLOAD_FAILED`.
-
-Measured on 5 November 2026 from a mainland China host: ModelScope averaged
-about 15 MB/s and took 94 minutes; the Hugging Face mirror stalled at 630 MB,
-then ran at about 1 MB/s. On a direct link outside China, Hugging Face usually
-takes 10–40 minutes.
+Measured from mainland China hosts: ModelScope took 77 minutes at about 18 MB/s
+on 8 November 2026 and 94 minutes at about 15 MB/s on 5 November; the Hugging
+Face mirror stalled at 630 MB, then ran at about 1 MB/s. On a direct link
+outside China, Hugging Face usually takes 10–40 minutes.
 
 Run it in `tmux`, because it outlasts most agent shell time limits:
 
@@ -180,21 +263,29 @@ tmux new -d -s model_download "bash 02_extraction/scripts/download_model.sh > wo
 ```
 
 Check every few minutes with `tail -3 work/repro/download.log`, until the last
-line is `DOWNLOAD_DONE` or `DOWNLOAD_FAILED`. On `DOWNLOAD_FAILED`, read
-`work/repro/modelscope.log` or `work/repro/hf.log`, then run the same `tmux`
-line once more; ModelScope resumes.
+line ends in `DOWNLOAD_DONE` or `DOWNLOAD_FAILED` (each line starts with a
+timestamp). Hashing the 82 GB at the end takes a few minutes. On
+`DOWNLOAD_FAILED`, the lines above it name the files still missing and the
+client logs (`work/repro/modelscope.log`, `hf.log`, `curl.log`); run the same
+`tmux` line once more, it resumes. If it fails again, put a source that works in
+front by hand, for example `MODEL_SOURCE=hfmirror bash 02_extraction/...`, or
+skip the clients with `MODEL_CLI=0`. If the script itself breaks, fetch the
+missing files with `curl -L -C - -o <file>` from
+`https://www.modelscope.cn/models/Qwen/Qwen3-Next-80B-A3B-Instruct-FP8/resolve/master/<file>`
+or `https://hf-mirror.com/Qwen/Qwen3-Next-80B-A3B-Instruct-FP8/resolve/main/<file>`
+into the model directory; the hash check below decides.
 
-A half-finished download already holds `config.json`, so check that all eight
-shards are closed and the size is there, not that file. The size is in bytes:
-82 GB is 76.5 GiB, so `du -BG` would read 77. Pass check, all three must exit 0:
+Pass check, all three must exit 0:
 
 ```bash
 cd "$REPO"
 D=work/models/Qwen3-Next-80B-A3B-Instruct-FP8
-test "$(find "$D" -name '*.safetensors' | wc -l)" -eq 8
-test -z "$(find "$D" \( -name '*.incomplete' -o -name '*.partial' \) | head -1)"
-test "$(du -sB1 "$D" | cut -f1)" -ge 80000000000
+tail -1 work/repro/download.log | grep -q 'DOWNLOAD_DONE$'
+(cd "$D" && sha256sum --quiet -c "$REPO/02_extraction/profiles/models/qwen3-next-80b-fp8.sha256")
+test "$(du -sLB1 "$D" | cut -f1)" -ge 80000000000
 ```
+
+The second line hashes the 82 GB again and takes a few minutes.
 
 ## 4. Serve the model and run the smoke test
 
@@ -202,18 +293,23 @@ test "$(du -sB1 "$D" | cut -f1)" -ge 80000000000
 cd "$REPO/02_extraction"
 bash scripts/run_smoke.sh --runtime "$REPO/work/repro/runtime.yaml" \
     --model "$REPO/work/repro/model.yaml" \
-    --task profiles/tasks/criminal_defendant_v1.3 | tee "$REPO/work/repro/smoke.log"
+    --task profiles/tasks/criminal_defendant_v1.3 \
+    --run-dir "$REPO/work/repro/smoke_run" | tee "$REPO/work/repro/smoke.log"
 cd "$REPO"
 ```
 
 This runs the environment doctor, the weight check, starts vLLM and LiteLLM in
 tmux, and sends one case through the production prompt. Loading the weights
-takes several minutes.
+takes several minutes; the whole step took about 5 minutes on 8 November 2026.
+The terminal shows two warnings, `未给 --batches：只跑到 Stage A` and
+`未跑 Stage C（没给 --batches）——这不是完整 GREEN，不得进入 Production`. Both
+are expected: this step runs only Stage A, and steps 5 to 7 do the batch run.
+Only the last line of `smoke.log` counts.
 
 Pass check: `cd "$REPO" && tail -1 work/repro/smoke.log | grep -Fx '{"final":"ENV_STAGE_A_OK"}'`
 
-On failure the driver prints the failed gate and its run directory under
-`02_extraction/runs/`; report that gate and the files in that directory. The
+On failure the driver prints the failed gate; its logs are in
+`work/repro/smoke_run/`. Report that gate and the files in that directory. The
 services keep running after this step.
 
 ### 4b. Confirm the service is up

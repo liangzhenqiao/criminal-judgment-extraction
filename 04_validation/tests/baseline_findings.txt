@@ -2,7 +2,6 @@
 02_extraction/runs/20261105_full1000/failure_y2017.jsonl: data_file
 02_extraction/runs/20261105_full1000/failure_y2017.jsonl:1: birth_date: '1979年9月27日出生'
 02_extraction/runs/20261105_full1000/failure_y2017.jsonl:1: defendant_name: '被告人毛红雨，男'
-02_extraction/scripts/download_model.sh:14: gpu_host: 'AutoDL'
 README.md:59: birth_date: '1982年9月28日生'
 README.md:129: tool_name: 'Claude'
 README.md:130: tool_name: 'Codex'
